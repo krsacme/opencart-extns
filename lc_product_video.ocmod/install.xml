@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="utf-8"?>
+<modification>
+  <name>lc_product_video</name>
+  <code>230320181645</code>
+  <version>1.0</version>
+  <author>logicrux</author>
+  <link>mailto:support@logicrux.com</link>
+  <file path="admin/view/template/catalog/product_form.twig">
+    <operation info="Add Video Icon">
+      <search><![CDATA[
+      <td class="text-left"><button type="button" onclick="addImage();" data-toggle="tooltip" title="{{ button_image_add }}" class="btn btn-primary"><i class="fa fa-plus-circle"></i></button></td>
+       ]]></search>
+      <add position="replace"><![CDATA[
+        <td class="text-left"><button type="button" onclick="addImage();" data-toggle="tooltip" title="{{ button_image_add }}" class="btn btn-primary"><i class="fa fa-plus-circle"></i></button>
+        <button style="margin-left:10px;background:#272727;border:1px solid #272727;" type="button" onclick="addVideo();" data-toggle="tooltip" title="Add Video" class="btn btn-primary"><i class="fa fa-plus-square"></i></button></td>
+       ]]></add>
+    </operation>
+    <operation info="Add Video Function">
+      <search><![CDATA[
+        function addImage() {
+       ]]></search>
+      <add position="before"><![CDATA[
+        function addVideo() {
+            html  = '<tr id="image-row' + image_row + '">';
+            html += '  <td class="text-left"><input class="form-control" placeholder="Video URL (YouTube or Vimeo)" type="text" name="product_image[' + image_row + '][image]" value="" id="input-image' + image_row + '" /></td>';
+            html += '  <td class="text-right"><input type="text" name="product_image[' + image_row + '][sort_order]" value="" placeholder="Sort Order" class="form-control" /></td>';
+            html += '  <td class="text-left"><button type="button" onclick="$(\'#image-row' + image_row  + '\').remove();" data-toggle="tooltip" title="Remove" class="btn btn-danger"><i class="fa fa-minus-circle"></i></button></td>';
+            html += '</tr>';
+            $('#images tbody').append(html);
+            image_row++;
+        }
+       ]]></add>
+    </operation>
+    <operation info="Display video URL if exist">
+      <search><![CDATA[
+          <td class="text-left"><a href="" id="thumb-image{{ image_row }}" data-toggle="image" class="img-thumbnail"><img src="{{ product_image.thumb }}" alt="" title="" data-placeholder="{{ placeholder }}" /></a>
+       ]]></search>
+      <add position="replace" offset="1"><![CDATA[
+        {% if product_image.thumb == "" %}
+          <td class="text-left"><input type="text" class="form-control" name="product_image[{{ image_row }}][image]" value="{{ product_image.image }}" id="input-image{{ image_row }}" /></td>
+        {% else %}
+          <td class="text-left"><a href="" id="thumb-image{{ image_row }}" data-toggle="image" class="img-thumbnail"><img src="{{ product_image.thumb }}" alt="" title="" data-placeholder="{{ placeholder }}" /></a>
+            <input type="hidden" name="product_image[{{ image_row }}][image]" value="{{ product_image.image }}" id="input-image{{ image_row }}" /></td>
+        {% endif %}
+       ]]></add>
+    </operation>
+  </file>
+  <file path="admin/controller/catalog/product.php">
+    <operation info="Modify Controller for video url return">
+      <search><![CDATA[
+        if (is_file(DIR_IMAGE . $product_image['image'])) {
+       ]]></search>
+      <add position="replace"><![CDATA[
+            if ((strpos($product_image['image'], 'youtube') > 0) || strpos($product_image['image'], 'vimeo') > 0) {
+              $image = $product_image['image'];
+              $thumb = '';
+            } else if (is_file(DIR_IMAGE . $product_image['image'])) {
+      ]]></add>
+    </operation>
+  </file>
+
+  <file path="catalog/controller/product/product.php">
+    <operation info="Get video utr from controller 1">
+      <search><![CDATA[
+          $data['images'][] = array(
+       ]]></search>
+      <add position="replace" offset="3"><![CDATA[
+                if ((strpos($result['image'], 'youtube') > 0) || strpos($result['image'], 'vimeo') > 0) {
+                  $data['images'][] = array(
+                    'popup' => $result['image'],
+                    'thumb' => ''
+                    );
+                } else {
+                  $data['images'][] = array(
+                    'popup' => $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_popup_height')),
+                    'thumb' => $this->model_tool_image->resize($result['image'], $this->config->get('theme_' . $this->config->get('config_theme') . '_image_additional_width'), $this->config->get('theme_' . $this->config->get('config_theme') . '_image_additional_height'))
+                    );          
+                }
+       ]]></add>
+    </operation>
+  </file>
+  <file path="catalog/view/theme/default/template/product/product.twig">
+    <operation info="Set class name for video play">
+      <search><![CDATA[
+            {% for image in images %}
+       ]]></search>
+      <add position="replace" offset="1"><![CDATA[
+            {% for image in images if image.popup != '' %}
+              {% if image.thumb == '' %}
+              <li class="image-additional"><a class="thumbnail mfp-iframe" href="{{ image.popup }}" title="{{ heading_title }}"><i style="font-size: 30px;padding: 18px;" class="fa fa-play-circle"></i></a></li>
+              {% else %}
+              <li class="image-additional"><a class="thumbnail" href="{{ image.popup }}" title="{{ heading_title }}"> <img src="{{ image.thumb }}" title="{{ heading_title }}" alt="{{ heading_title }}" /></a></li>
+              {% endif %}
+       ]]></add>
+    </operation>
+  </file>
+</modification>
